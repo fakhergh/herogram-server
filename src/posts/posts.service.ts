@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Post } from '@/posts/posts.schema';
 import { Model, Types } from 'mongoose';
-import * as process from 'node:process';
 import { ConfigService } from '@nestjs/config';
 import { EnvironmentVariables } from '@/config/config.type';
 
@@ -54,7 +53,7 @@ export class PostsService {
   }
 
   getPostsByUserId(userId: string | Types.ObjectId): Promise<Post[]> {
-    return this.postModel.find({ userId }).sort({ position: -1 });
+    return this.postModel.find({ userId }).sort({ position: 1 });
   }
 
   getPostByFileName(filename: string): Promise<Post> {
@@ -68,35 +67,14 @@ export class PostsService {
     return this.postModel.findOneAndUpdate(filter, update);
   }
 
-  async updatePosition(
-    id: string | Types.ObjectId,
-    newPosition: number,
-  ): Promise<Post> {
-    // Get the post being updated
-    const postToUpdate = await this.postModel.findById(id);
+  async sortPosts(ids: Array<string | Types.ObjectId>) {
+    const operations = ids.map((id: string, position: number) => ({
+      updateOne: {
+        filter: { _id: id },
+        update: { $set: { position } },
+      },
+    }));
 
-    if (!postToUpdate) return null;
-
-    const oldPosition = postToUpdate.position;
-
-    // Adjust positions of other posts
-    if (oldPosition < newPosition) {
-      // If moving down the list, decrement the position of affected posts
-      await this.postModel.updateMany(
-        { position: { $gt: oldPosition, $lte: newPosition } },
-        { $inc: { position: -1 } },
-      );
-    } else if (oldPosition > newPosition) {
-      // If moving up the list, increment the position of affected posts
-      await this.postModel.updateMany(
-        { position: { $gte: newPosition, $lt: oldPosition } },
-        { $inc: { position: 1 } },
-      );
-    }
-
-    // Update the position of the specified post
-    postToUpdate.position = newPosition;
-
-    return postToUpdate.save();
+    return await this.postModel.bulkWrite(operations);
   }
 }

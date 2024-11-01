@@ -9,8 +9,6 @@ import {
   Req,
   UseGuards,
   Patch,
-  Param,
-  NotFoundException,
 } from '@nestjs/common';
 import { PostsService } from '@/posts/posts.service';
 import { CreatePostDto, UpdatePostPositionDto } from '@/posts/posts.dto';
@@ -80,20 +78,14 @@ export class PostsController {
     return this.postsService.getPostsByUserId(req.user._id);
   }
 
-  @Patch(':postId/position')
+  @Patch('sort')
   @UseGuards(JwtAuthGuard)
-  async updatePostPosition(
+  async sortsPosts(
     @Req() req: RequestUser,
-    @Param('postId') postId: string,
     @Body() updatePostPositionDto: UpdatePostPositionDto,
   ) {
-    const post = await this.postsService.getPost(postId, req.user._id);
+    await this.postsService.sortPosts(updatePostPositionDto.ids);
 
-    if (!post) throw new NotFoundException('Post not found');
-
-    return this.postsService.updatePosition(
-      post._id,
-      updatePostPositionDto.position,
-    );
+    return this.postsService.getPostsByUserId(req.user._id);
   }
 }

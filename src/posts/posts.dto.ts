@@ -1,4 +1,10 @@
-import { IsArray, IsNumber, IsOptional } from 'class-validator';
+import {
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePostDto {
@@ -11,6 +17,6 @@ export class CreatePostDto {
 }
 
 export class UpdatePostPositionDto {
-  @IsNumber()
-  position: number;
+  @IsString({ each: true })
+  ids: Array<string>;
 }
